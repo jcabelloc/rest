@@ -21,6 +21,7 @@ exports.getProductos = (req, res, next) => {
         .limit(ITEMS_POR_PAGINA);
     })
     .then(productos => {
+      /*
       res.render('tienda/lista-productos', {
         prods: productos,
         titulo: 'Todos los Productos',
@@ -31,12 +32,25 @@ exports.getProductos = (req, res, next) => {
         paginaSiguiente: pagina + 1,
         paginaAnterior: pagina - 1,
         ultimaPagina: Math.ceil(itemsTotales / ITEMS_POR_PAGINA)
+      }); */
+      res
+        .status(200)
+        .json({
+          prods: productos,
+          mensaje: 'Se proceso con exito',
+          paginaActual: pagina,
+          tienePaginaSiguiente: ITEMS_POR_PAGINA * pagina < itemsTotales,
+          tienePaginaAnterior: pagina > 1,
+          paginaSiguiente: pagina + 1,
+          paginaAnterior: pagina - 1,
+          ultimaPagina: Math.ceil(itemsTotales / ITEMS_POR_PAGINA)
       });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
 };
 
@@ -44,16 +58,29 @@ exports.getProducto = (req, res, next) => {
   const idProducto = req.params.idProducto;
   Producto.findById(idProducto)
     .then(producto => {
+      /*
       res.render('tienda/detalle-producto', {
         producto: producto,
         titulo: producto.nombre,
         path: '/productos',
+      }); */
+      if (!producto) {
+        const error = new Error('No se encontro tal producto');
+        error.statusCode = 404;
+        throw error;
+      }
+      res
+        .status(200)
+        .json({
+          producto: producto,
+          mensaje: 'Se proceso con exito',
       });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
   };
 
@@ -70,6 +97,7 @@ exports.getIndex = (req, res, next) => {
         .limit(ITEMS_POR_PAGINA);
     })
     .then(productos => {
+      /*
       res.render('tienda/index', {
         prods: productos,
         titulo: 'Tienda',
@@ -80,12 +108,25 @@ exports.getIndex = (req, res, next) => {
         paginaSiguiente: pagina + 1,
         paginaAnterior: pagina - 1,
         ultimaPagina: Math.ceil(itemsTotales / ITEMS_POR_PAGINA)
-      });
+      }); */
+      res
+        .status(200)
+        .json({
+          prods: productos,
+          mensaje: 'Se proceso con exito',
+          paginaActual: pagina,
+          tienePaginaSiguiente: ITEMS_POR_PAGINA * pagina < itemsTotales,
+          tienePaginaAnterior: pagina > 1,
+          paginaSiguiente: pagina + 1,
+          paginaAnterior: pagina - 1,
+          ultimaPagina: Math.ceil(itemsTotales / ITEMS_POR_PAGINA)
+        });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
 };
 
