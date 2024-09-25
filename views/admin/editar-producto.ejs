@@ -1,0 +1,65 @@
+<%- include('../includes/head.ejs') %>
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/producto.css">
+</head>
+
+<body>
+   <%- include('../includes/navigation.ejs') %>
+
+    <main>
+        <% if (mensajeError) { %>
+            <div class="user-message user-message--error"><%= mensajeError %></div>
+        <% } %>
+        <form class="product-form" action="/admin/<% if (modoEdicion) { %>editar-producto<% } else { %>crear-producto<% } %>" method="POST" enctype="multipart/form-data">
+            <div class="form-control">
+                <label for="nombre">Nombre</label>
+                <input 
+                    class="<%= erroresValidacion.find(e => e.path === 'nombre') ? 'invalid' : '' %>"
+                    type="text" 
+                    name="nombre" 
+                    id="nombre" 
+                    value="<% if (modoEdicion || tieneError) { %><%= producto.nombre %><% } %>">
+            </div>
+            <!--
+            <div class="form-control">
+                <label for="urlImagen">URL Imagen</label>
+                <input 
+                    class="<%= erroresValidacion.find(e => e.path === 'urlImagen') ? 'invalid' : '' %>"
+                    type="text" 
+                    name="urlImagen" 
+                    id="urlImagen" 
+                    value="<% if (modoEdicion || tieneError) { %><%= producto.urlImagen %><% } %>">
+            </div>-->
+            <div class="form-control">
+                <label for="imagen">Imagen</label>
+                <input 
+                    type="file" 
+                    name="imagen" 
+                    id="imagen" >
+            <div class="form-control">
+                <label for="precio">Precio</label>
+                <input 
+                    class="<%= erroresValidacion.find(e => e.path === 'precio') ? 'invalid' : '' %>"
+                    type="number" 
+                    name="precio" 
+                    id="precio" 
+                    value="<% if (modoEdicion || tieneError) { %><%= producto.precio %><% } %>">
+            </div>
+            <div class="form-control">
+                <label for="descripcion">Descripcion</label>
+                <textarea 
+                    class="<%= erroresValidacion.find(e => e.path === 'descripcion') ? 'invalid' : '' %>"
+                    name="descripcion" 
+                    id="descripcion"
+                    rows="5"
+                    rows="5"><% if (modoEdicion || tieneError) { %><%= producto.descripcion %><% } %></textarea>
+
+            </div>
+            <% if (modoEdicion) { %>
+                <input type="hidden" value="<%= producto._id %>" name="idProducto">
+            <% } %>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn" type="submit"><% if (modoEdicion) { %>Actualizar Producto<% } else { %>Crear Producto<% } %></button>
+        </form>
+    </main>
+<%- include('../includes/end.ejs') %>
