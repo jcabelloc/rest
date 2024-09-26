@@ -8,7 +8,7 @@ const { validationResult } = require('express-validator');
 const Producto = require('../models/producto');
 
 exports.getCrearProducto = (req, res, next) => {
-  res.render('admin/editar-producto', { 
+  res.render('admin/editar-producto', {
     titulo: 'Crear Producto',
     path: '/admin/editar-producto',
     modoEdicion: false,
@@ -107,11 +107,11 @@ exports.getEditarProducto = (req, res, next) => {
         erroresValidacion: [],
       });
     })
-  .catch(err => {
-    const error = new Error(err);
-    error.httpStatusCode = 500;
-    return next(error);
-  });
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 
@@ -165,27 +165,27 @@ exports.postEditarProducto = (req, res, next) => {
       error.httpStatusCode = 500;
       return next(error);
     });
-}; 
+};
 
 exports.getProductos = (req, res, next) => {
   Producto
-    //.find()
-    .find({ idUsuario: req.usuario._id })
+    .find({ idUsuario: req.idUsuario })
     //.select('nombre precio -_id')
     .then(productos => {
-      console.log(productos)
-      res.render('admin/productos', {
-        prods: productos,
-        titulo: 'Admin Productos',
-        path: '/admin/productos',
-      });
+      res
+        .status(200)
+        .json({
+          prods: productos,
+          mensaje: 'Se obtuvieron los productos con exito',
+        })
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
-  };
+};
 
 
 exports.postEliminarProducto = (req, res, next) => {
@@ -196,7 +196,7 @@ exports.postEliminarProducto = (req, res, next) => {
         return next(new Error('Producto no encontrado'));
       }
       fileHelper.deleteFile(producto.urlImagen);
-      return   Producto.deleteOne({ _id: idProducto, idUsuario: req.usuario._id });
+      return Producto.deleteOne({ _id: idProducto, idUsuario: req.usuario._id });
     })
     .then(() => {
       console.log('PRODUCTO ELIMINADO');
@@ -218,7 +218,7 @@ exports.deleteProducto = (req, res, next) => {
         return next(new Error('Producto no encontrado'));
       }
       fileHelper.deleteFile(producto.urlImagen);
-      return   Producto.deleteOne({ _id: idProducto, idUsuario: req.usuario._id });
+      return Producto.deleteOne({ _id: idProducto, idUsuario: req.usuario._id });
     })
     .then(() => {
       console.log('PRODUCTO ELIMINADO');
