@@ -15,7 +15,7 @@ router.get('/crear-producto', isAuth, adminController.getCrearProducto);
 router.get('/productos', isAuth, adminController.getProductos);
 
 router.post(
-    '/crear-producto',
+    '/productos',
     [
         body('nombre')
           .isString()
@@ -31,8 +31,8 @@ router.post(
 
 router.get('/editar-producto/:idProducto', isAuth, adminController.getEditarProducto);
 
-router.post(
-    '/editar-producto',
+router.put(
+    '/productos/:idProducto',
     [
         body('nombre')
           .isString()

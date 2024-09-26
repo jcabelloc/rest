@@ -19,46 +19,24 @@ exports.getCrearProducto = (req, res, next) => {
 };
 
 exports.postCrearProducto = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors)
+    const error = new Error('No paso la validación de datos');
+    error.statusCode = 422;
+    throw error;
+  }
+
+  if (!req.file) {
+    const error = new Error('No ha adjuntado una imagen');
+    error.statusCode = 422;
+    throw error;
+  }
+
   const nombre = req.body.nombre;
-  //const urlImagen = req.body.urlImagen;
   const imagen = req.file;
   const precio = req.body.precio;
   const descripcion = req.body.descripcion;
-  if (!imagen) {
-    return res.status(422).render('admin/editar-producto', {
-      titulo: 'Crear Producto',
-      path: '/admin/crear-producto',
-      modoEdicion: false,
-      tieneError: true,
-      mensajeError: 'No hay imagen adjunta',
-      erroresValidacion: [],
-      producto: {
-        nombre: nombre,
-        precio: precio,
-        descripcion: descripcion
-      }
-    });
-  }
-
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    // console.log(errors.array());
-    return res.status(422).render('admin/editar-producto', {
-      titulo: 'Crear Producto',
-      path: '/admin/crear-producto',
-      modoEdicion: false,
-      tieneError: true,
-      mensajeError: errors.array()[0].msg,
-      erroresValidacion: errors.array(),
-      producto: {
-        nombre: nombre,
-        precio: precio,
-        descripcion: descripcion
-      }
-    });
-  }
-
   const urlImagen = imagen.path;
 
   const producto = new Producto({
@@ -67,21 +45,21 @@ exports.postCrearProducto = (req, res, next) => {
     precio: precio,
     descripcion: descripcion,
     urlImagen: urlImagen,
-    idUsuario: req.usuario._id
+    idUsuario: req.idUsuario
   });
   producto
     .save()
     .then(result => {
-      // console.log(result);
-      console.log('Producto Creado');
-      res.redirect('/admin/productos');
+      res.status(201).json({
+        mensaje: 'Producto creado satisfactoriamente!',
+        prod: result
+      });
     })
     .catch(err => {
-      //console.log(err);
-      //res.redirect('/500');
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
 };
 
@@ -116,36 +94,32 @@ exports.getEditarProducto = (req, res, next) => {
 
 
 exports.postEditarProducto = (req, res, next) => {
-  const idProducto = req.body.idProducto;
+  const idProducto = req.params.idProducto;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('No paso la validación de datos para actualizar el producto');
+    error.statusCode = 422;
+    throw error;
+  }
+
   const nombre = req.body.nombre;
   const precio = req.body.precio;
   const imagen = req.file;
   const descripcion = req.body.descripcion;
 
 
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).render('admin/editar-producto', {
-      titulo: 'Editar Producto',
-      path: '/admin/editar-producto',
-      modoEdicion: true,
-      tieneError: true,
-      mensajeError: errors.array()[0].msg,
-      erroresValidacion: errors.array(),
-      producto: {
-        nombre: nombre,
-        precio: precio,
-        descripcion: descripcion,
-        _id: idProducto
-      }
-    });
-  }
-
   Producto.findById(idProducto)
     .then(producto => {
-      if (producto.idUsuario.toString() !== req.usuario._id.toString()) {
-        return res.redirect('/');
+      if (!producto) {
+        const error = new Error('No se pudo encontrar el producto');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (producto.idUsuario.toString() !== req.idUsuario.toString()) {
+        const error = new Error('No Autorizado');
+        error.statusCode = 403;
+        throw error;
       }
       producto.nombre = nombre;
       producto.precio = precio;
@@ -157,13 +131,13 @@ exports.postEditarProducto = (req, res, next) => {
       return producto.save();
     })
     .then(result => {
-      console.log('PRODUCTO GUARDADO!');
-      res.redirect('/admin/productos');
+      res.status(200).json({ mensaje: 'Producto actualizado con exito', prod: result });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
 };
 
