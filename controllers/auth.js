@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 
 const nodemailer = require('nodemailer');
 const sendgridTransport = require('nodemailer-sendgrid-transport');
@@ -46,65 +47,49 @@ exports.postIngresar = (req, res, next) => {
   const password = req.body.password;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(422).render('auth/ingresar', {
-      path: '/ingresar',
-      titulo: 'Ingresar',
-      mensajeError: errors.array()[0].msg,
-      datosAnteriores: {
-        email: email,
-        password: password
-      },
-      erroresValidacion: errors.array()
-    });
+    const error = new Error(errors.array()[0].msg);
+    error.statusCode = 422;
+    throw error;
   }
+  let usuarioBD;
 
   Usuario.findOne({ email: email })
     .then(usuario => {
       if (!usuario) {
-        return res.status(422).render('auth/ingresar', {
-          path: '/ingresar',
-          titulo: 'Ingresar',
-          mensajeError: 'Invalido email o password.',
-          datosAnteriores: {
-            email: email,
-            password: password
-          },
-          erroresValidacion: []
-        });
+        const error = new Error('No hay usuario con dicho meial');
+        error.statusCode = 401;
+        throw error;
       }
-      bcrypt
-        .compare(password, usuario.password)
-        .then(hayCoincidencia => {
-          if (hayCoincidencia) {
-            req.session.autenticado = true;
-            req.session.usuario = usuario;
-            return req.session.save(err => {
-              console.log(err);
-              res.redirect('/');
-            });
-          }
-          return res.status(422).render('auth/ingresar', {
-            path: '/ingresar',
-            titulo: 'Ingresar',
-            mensajeError: 'Invalido email o password.',
-            datosAnteriores: {
-              email: email,
-              password: password
-            },
-            erroresValidacion: []
-          });
-        })
-        .catch(err => {
-          console.log(err);
-          res.redirect('/ingresar');
-        });
+      usuarioBD = usuario;
+      return bcrypt.compare(password, usuario.password);
+    })
+    .then(hayCoincidencia => {
+      if (!hayCoincidencia) {
+        const error = new Error('Invalido email o password.');
+        error.statusCode = 401;
+        throw error;
+      }
+      const token = jwt.sign(
+        {
+          email: usuarioBD.email,
+          idUsuario: usuarioBD._id.toString()
+        },
+        'unClaveMuyMuySecreta',
+        { expiresIn: '1h' }
+      );
+      res.status(200).json({
+        token: token,
+        idUsuario: usuarioBD._id.toString(),
+        mensaje: 'Token generado con exito',
+      });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(error);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
-  };
+};
 
 exports.getRegistrarse = (req, res, next) => {
   let mensaje = req.flash('error');
